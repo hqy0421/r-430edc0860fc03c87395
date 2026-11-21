@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- ``channel_retention`` composable query builder: day 0..N retention by UTC registration day and channel with snapshot-based maturity handling (immature cells return ``NULL`` and are flagged via ``is_mature``), computed in a single ClickHouse statement.
 
 ## [0.3.2] - 2024-06-12
 ### Added

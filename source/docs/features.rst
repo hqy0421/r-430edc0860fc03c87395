@@ -58,6 +58,43 @@ following functions are supported:
 * ``func.quantileIf(0.5, column1, column2 > 10)`` becomes ``quantileIf(0.5)(column1, column2 > 10)``
 
 
+Composable queries
+++++++++++++++++++
+
+``channel_retention`` builds a channel retention report as a composable
+``Select``: day 0 .. N retention by UTC registration day and channel,
+computed in a single ClickHouse statement.
+
+    .. code-block:: python
+
+        from datetime import datetime
+        from clickhouse_sqlalchemy import channel_retention
+
+        query = channel_retention(
+            users, events,
+            user_id=users.c.user_id,
+            registered_at=users.c.registered_at,
+            channel=users.c.channel,
+            event_user_id=events.c.user_id,
+            event_time=events.c.event_time,
+            max_day=7,
+            snapshot_as_of=datetime(2024, 6, 10, 12, 0, 0)
+        )
+        session.execute(
+            query.order_by('cohort_date', 'channel', 'day_offset')
+        )
+
+The query returns ``cohort_date``, ``channel``, ``day_offset``,
+``cohort_size``, ``retained_users``, ``retention_rate`` and
+``is_mature`` per row. Cells whose UTC day has not fully elapsed before
+the snapshot are flagged with ``is_mature = 0`` and return ``NULL``
+counts and rates instead of treating still-unobserved users as lost;
+mature cells without activity return 0. ``max_day``,
+``snapshot_as_of`` and the optional ``cohort_start``/``cohort_end``
+window are bound as statement parameters and can be overridden at
+execution time.
+
+
 Dialect-specific options
 ++++++++++++++++++++++++
 
